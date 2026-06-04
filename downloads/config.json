@@ -1,0 +1,20 @@
+{
+  "上市證券代號": {
+    "URL": "https://isin.twse.com.tw/isin/C_public.jsp?strMode=2",
+    "folder": "上市證券代號",
+    "tag": "",
+    "status": "20220101"
+  },
+  "上櫃證券代號": {
+    "URL": "https://isin.twse.com.tw/isin/C_public.jsp?strMode=4",
+    "folder": "上櫃證券代號",
+    "tag": "",
+    "status": "20220101"
+  },
+  "基金＿國際證券代號": {
+    "URL": "https://isin.twse.com.tw/isin/C_public.jsp?strMode=7",
+    "folder": "基金＿國際證券代號",
+    "tag": "",
+    "status": "20220101"
+  }
+}
