@@ -1,8 +1,9 @@
 {
-    "user": {
-        "name": "",
-        "ipns": "",
-        "key": ""
-    },
-    "keyword": ""
+  "keyword": "",
+  "user": {
+    "ipns": "398952bc3ab5a9c26f7f11d10154341ac66b7534bc46279e3a285e01bd947eb9",
+    "key": "d36cf2f712bc2dc675309074d56e372efb6bd532ba81e934582b0af43be0c739",
+    "name": "StockgoNode",
+    "pubkey": "398952bc3ab5a9c26f7f11d10154341ac66b7534bc46279e3a285e01bd947eb9"
+  }
 }

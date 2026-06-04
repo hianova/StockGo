@@ -2,6 +2,9 @@ import { serve, file } from "bun";
 import { $ } from "bun";
 import { join } from "path";
 import { readFileSync, existsSync } from "fs";
+import { renderTable } from "./components/table";
+import { renderChart } from "./components/chart";
+import { renderAdBanner } from "./components/ad_banner";
 
 const PORT = 3000;
 
@@ -19,6 +22,11 @@ function parseCSV(csvText: string): any[] {
   });
 }
 
+function isPremium(req: Request): boolean {
+  const cookie = req.headers.get("cookie") || "";
+  return cookie.includes("premium=true");
+}
+
 serve({
   port: PORT,
   async fetch(req) {
@@ -32,6 +40,39 @@ serve({
       return new Response(file("public/style.css"));
     }
 
+    // Toggle Premium API
+    if (req.method === "POST" && url.pathname === "/api/toggle-premium") {
+      const currentlyPremium = isPremium(req);
+      const newStatus = !currentlyPremium;
+      return new Response(
+        `<span class="premium-status">Premium: ${newStatus ? 'ON' : 'OFF'}</span>`,
+        {
+          headers: {
+            "Content-Type": "text/html",
+            "Set-Cookie": `premium=${newStatus}; Path=/; SameSite=Lax`
+          }
+        }
+      );
+    }
+
+    // Export CSV API
+    if (req.method === "GET" && url.pathname === "/api/export") {
+      if (!isPremium(req)) {
+        return new Response("Premium subscription required for data export.", { status: 403 });
+      }
+      const csvPath = "downloads/export.csv";
+      if (!existsSync(csvPath)) {
+        return new Response("No data available to export. Run a search first.", { status: 404 });
+      }
+      const csvContent = readFileSync(csvPath, "utf-8");
+      return new Response(csvContent, {
+        headers: {
+          "Content-Type": "text/csv",
+          "Content-Disposition": `attachment; filename="stockgo_export.csv"`
+        }
+      });
+    }
+
     // Handle search API for HTMX
     if (req.method === "POST" && url.pathname === "/api/search") {
       const formData = await req.formData();
@@ -43,12 +84,7 @@ serve({
 
       try {
         console.log(`Executing search for: ${query}`);
-        // Run stockgo binary with commands piped via stdin
-        // -S select [query]
-        // -S export downloads/export.csv
-        // exit
         const input = `-S select ${query}\n-S export downloads/export.csv\nexit\n`;
-        
         await $`echo ${input} | ./target/debug/stockgo`.quiet();
 
         const csvPath = "downloads/export.csv";
@@ -63,70 +99,42 @@ serve({
           return new Response("<div class='info'>No results found for your query.</div>", { headers: { "Content-Type": "text/html" } });
         }
 
-        // Build HTML table and chart script
         const headers = Object.keys(data[0]);
+        const premium = isPremium(req);
         
         let html = `<div class="results-container">`;
         
-        // Data table
-        html += `<div class="table-container"><table><thead><tr>`;
-        headers.forEach(h => html += `<th>${h}</th>`);
-        html += `</tr></thead><tbody>`;
-        data.slice(0, 100).forEach(row => {
-          html += `<tr>`;
-          headers.forEach(h => html += `<td>${row[h]}</td>`);
-          html += `</tr>`;
-        });
-        html += `</tbody></table></div>`;
+        // Monetization: Inject Ad Banner if not premium
+        if (!premium) {
+          html += renderAdBanner();
+        }
 
-        // Chart.js integration
-        // Try to find a date column and a numeric column
-        const labelCol = headers.find(h => h.toLowerCase().includes("date") || h.toLowerCase().includes("pathin")) || headers[0];
-        const numCols = headers.filter(h => h !== labelCol && !isNaN(Number(data[0][h])));
-        const dataCol = numCols.length > 0 ? numCols[0] : (headers.length > 1 ? headers[1] : headers[0]);
-
-        const chartLabels = data.map(r => r[labelCol] || "").slice(0, 100);
-        const chartValues = data.map(r => parseFloat(r[dataCol] || "0")).slice(0, 100);
-
-        html += `
-          <div class="chart-container">
-            <canvas id="resultsChart"></canvas>
-          </div>
-          <script>
-            if (window.currentChart) {
-              window.currentChart.destroy();
-            }
-            const ctx = document.getElementById('resultsChart').getContext('2d');
-            window.currentChart = new Chart(ctx, {
-              type: 'line',
-              data: {
-                labels: ${JSON.stringify(chartLabels)},
-                datasets: [{
-                  label: '${dataCol}',
-                  data: ${JSON.stringify(chartValues)},
-                  borderColor: '#10b981',
-                  backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                  borderWidth: 2,
-                  tension: 0.3,
-                  fill: true
-                }]
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { labels: { color: '#e2e8f0' } }
-                },
-                scales: {
-                  x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
-                  y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
-                }
-              }
-            });
-          </script>
-        `;
-
+        // Export Button (Premium Feature)
+        if (premium) {
+          html += `
+            <div class="premium-actions">
+              <a href="/api/export" target="_blank" class="export-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Export CSV
+              </a>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="premium-actions locked">
+              <button disabled class="export-btn locked-btn" title="Exporting is a Premium Feature">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Export CSV (Premium)
+              </button>
+            </div>
+          `;
+        }
+        
+        // Assemble decoupled components
+        html += renderChart(headers, data);
+        html += renderTable(headers, data);
         html += `</div>`;
+
         return new Response(html, { headers: { "Content-Type": "text/html" } });
         
       } catch (err: any) {

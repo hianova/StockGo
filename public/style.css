@@ -33,6 +33,11 @@ body {
   padding: 30px 0;
   border-bottom: 1px solid var(--border);
   margin-bottom: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
 .logo {
@@ -47,6 +52,32 @@ body {
   background: linear-gradient(to right, var(--primary), var(--accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* Premium Header Action */
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.premium-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 215, 0, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  padding: 8px 16px;
+  border-radius: 99px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.premium-toggle:hover {
+  background: rgba(255, 215, 0, 0.2);
+  transform: translateY(-1px);
 }
 
 .search-section {
@@ -195,7 +226,91 @@ body {
   border-radius: 20px;
   border: 1px solid var(--border);
   height: 400px;
+  min-height: 400px; /* CLS Prevention */
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Ad Banner CLS Prevention */
+.ad-container {
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2));
+  border: 1px dashed var(--border);
+  border-radius: 20px;
+  min-height: 120px; /* Fixed height to prevent CLS */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+}
+
+.ad-label {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.ad-content h3 {
+  font-size: 1.2rem;
+  margin-bottom: 5px;
+  color: var(--primary);
+}
+
+.ad-content p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.ad-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  padding: 6px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.ad-btn:hover {
+  opacity: 0.9;
+}
+
+/* Premium Actions (Export CSV) */
+.premium-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.export-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.export-btn:hover:not(.locked-btn) {
+  background: #059669;
+}
+
+.export-btn.locked-btn {
+  background: rgba(255,255,255,0.1);
+  color: var(--text-muted);
+  cursor: not-allowed;
 }
 
 .table-container {
@@ -248,4 +363,46 @@ tr:hover td {
   border-radius: 10px;
   border: 1px solid rgba(59, 130, 246, 0.2);
   text-align: center;
+}
+
+/* RWD Media Queries */
+@media (max-width: 768px) {
+  .search-section h2 {
+    font-size: 2rem;
+  }
+  
+  .input-group {
+    flex-direction: column;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    gap: 10px;
+  }
+  
+  .input-group input {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+  }
+  
+  .input-group button {
+    padding: 15px;
+    width: 100%;
+  }
+
+  .search-icon {
+    display: none;
+  }
+  
+  .chart-container {
+    height: 300px;
+    min-height: 300px;
+    padding: 10px;
+  }
+  
+  .app-header {
+    flex-direction: column;
+    justify-content: center;
+  }
 }

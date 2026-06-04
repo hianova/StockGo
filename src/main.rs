@@ -17,7 +17,10 @@ use selecter::Selecter;
 use trust::TrustLayer;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Initializing Stockgo Rust...");
+    let args: Vec<String> = std::env::args().collect();
+    if !args.contains(&"--json".to_string()) {
+        println!("Initializing Stockgo Rust...");
+    }
     
     // Create folders if they don't exist
     std::fs::create_dir_all("downloads")?;
@@ -30,9 +33,76 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize trust layer (replaces IPFS)
     let trust = Arc::new(TrustLayer::new(config.clone())?);
     
-    // Perform startup update
-    println!("Checking daily updates...");
-    manager.update();
+    // Perform startup update if not skipped
+    let args: Vec<String> = std::env::args().collect();
+    if !args.contains(&"--skip-update".to_string()) {
+        println!("Checking daily updates...");
+        manager.update();
+    }
+    
+    // CLI Argument Intercepts for ServerGo integration
+    if args.contains(&"search".to_string()) && args.contains(&"--json".to_string()) {
+        let mut line = String::new();
+        io::stdin().read_line(&mut line)?;
+        let query = line.trim().trim_start_matches("q=");
+        
+        let cmd_in = vec![format!("select {}", query)];
+        let selecter = Selecter::new(cmd_in, &config);
+        let data = match selecter.select(&config) {
+            Ok(d) => d,
+            Err(_) => Vec::new(),
+        };
+        
+        if data.is_empty() {
+            println!("[]");
+            return Ok(());
+        }
+        
+        let headers = &data[0];
+        let mut json_arr = Vec::new();
+        for row in data.iter().skip(1) {
+            let mut obj = serde_json::Map::new();
+            for (i, val) in row.iter().enumerate() {
+                if i < headers.len() {
+                    obj.insert(headers[i].clone(), serde_json::Value::String(val.clone()));
+                }
+            }
+            json_arr.push(serde_json::Value::Object(obj));
+        }
+        println!("{}", serde_json::to_string(&json_arr).unwrap());
+        return Ok(());
+    }
+
+    if args.contains(&"run".to_string()) && args.contains(&"backtest".to_string()) {
+        let mut line = String::new();
+        io::stdin().read_line(&mut line)?;
+        let query = line.trim().trim_start_matches("q=");
+        
+        println!("Starting backtest for {}...", query);
+        io::stdout().flush()?; // Ensure real-time WebSocket push
+        
+        let cmd_in = vec![format!("select {}", query)];
+        let selecter = Selecter::new(cmd_in, &config);
+        let data = match selecter.select(&config) {
+            Ok(d) => d,
+            Err(_) => Vec::new(),
+        };
+        
+        if data.is_empty() || data.len() < 2 {
+            println!("Error: No data available for backtest.");
+            return Ok(());
+        }
+        
+        println!("Running simulation algorithm on {} data points...", data.len() - 1);
+        io::stdout().flush()?;
+        
+        let tester = backtest::BackTest::new(data.clone(), "default")?;
+        
+        println!("Backtest complete.");
+        println!("Win Rate: {}", tester.get_win_rate());
+        println!("Expected Value: {}", tester.get_expect_value());
+        return Ok(());
+    }
     
     let exit_rgx = Regex::new(r"(?i)exit").unwrap();
     let stdin = io::stdin();

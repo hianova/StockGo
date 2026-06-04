@@ -3,3 +3,5 @@
 /strategy/
 *.log
 .DS_Store
+TODO.md
+/data/
