@@ -17,6 +17,16 @@ use selecter::Selecter;
 use trust::TrustLayer;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Auto-chdir to project root if running from target/debug or target/release
+    // This prevents stray files (like downloads/, strategy/, user_data.json) from being generated in other directories (e.g. ServerGo)
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(parent) = exe_path.parent().and_then(|p| p.parent()).and_then(|p| p.parent()) {
+            if parent.join("Cargo.toml").exists() {
+                let _ = std::env::set_current_dir(parent);
+            }
+        }
+    }
+
     let args: Vec<String> = std::env::args().collect();
     if !args.contains(&"--json".to_string()) {
         println!("Initializing Stockgo Rust...");
