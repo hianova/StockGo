@@ -1,0 +1,36 @@
+{
+  "www_twse_com_tw": {
+    "head": {
+      "HTML": "tr:eq(1)"
+    },
+    "body": {
+      "HTML": "tr:gt(1)"
+    }
+  },
+  "mops_twse_com_tw": {
+    "codec": "big5",
+    "head": {
+      "HTML": "tr:eq(1)"
+    },
+    "body": {
+      "HTML": "tr:gt(1)"
+    }
+  },
+  "isin_twse_com_tw": {
+    "codec": "big5",
+    "head": {
+      "HTML": "tr:eq(0)"
+    },
+    "body": {
+      "HTML": "tr:gt(0)"
+    }
+  },
+  "www_taifex_com_tw": {
+    "head": {
+      "HTML": "tr:eq(2)"
+    },
+    "body": {
+      "HTML": "tr:gt(2)"
+    }
+  }
+}

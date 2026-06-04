@@ -1,0 +1,5 @@
+/target/
+/downloads/
+/strategy/
+*.log
+.DS_Store
