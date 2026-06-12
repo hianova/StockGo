@@ -1,4 +1,4 @@
-package hianova.stockgo;
+package hianova.StockGo;
 
 import static java.lang.System.out;
 
@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class Stockgo {
+public class StockGo {
 
   private static Manager man;
   private static Selecter sel;

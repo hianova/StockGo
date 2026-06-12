@@ -21,15 +21,14 @@ impl BackTest {
             return Err(format!("Strategy file {} not found", strategy_path).into());
         }
         
-        // Write a temporary JavaScript wrapper file inside the scratch directory
-        // or execution folder to execute the strategy using bun.
         let wrapper_code = r#"
 const fs = require('fs');
 const in_val = process.argv[2];
-const data_val = JSON.parse(process.argv[3]);
+const data_path = process.argv[3];
 const strategy_path = process.argv[4];
 
-// Global scope bindings for the script
+const data_val = JSON.parse(fs.readFileSync(data_path, 'utf8'));
+
 global.in = in_val;
 global.data = data_val;
 global.out = [];
@@ -45,18 +44,19 @@ try {
 "#;
 
         let wrapper_path = "downloads/backtest_wrapper.js";
+        let data_tmp_path = "downloads/backtest_data.json";
         if let Some(parent) = Path::new(wrapper_path).parent() {
             fs::create_dir_all(parent)?;
         }
         fs::write(wrapper_path, wrapper_code)?;
         
-        // Serialize input dataset to pass to bun
         let serialized_data = serde_json::to_string(&data_in)?;
+        fs::write(data_tmp_path, serialized_data)?;
         
         let output = Command::new("bun")
             .arg(wrapper_path)
             .arg(name_in)
-            .arg(&serialized_data)
+            .arg(data_tmp_path)
             .arg(&strategy_path)
             .output()?;
             
@@ -70,6 +70,9 @@ try {
             let stderr_str = String::from_utf8_lossy(&output.stderr);
             return Err(format!("Bun execution failed: {}", stderr_str).into());
         }
+        
+        let _ = fs::remove_file(wrapper_path);
+        let _ = fs::remove_file(data_tmp_path);
         
         let mut odd_p = 0.0;
         let mut odd_n = 0.0;
@@ -98,9 +101,6 @@ try {
                 i += 2;
             }
         }
-        
-        // Cleanup wrapper script
-        let _ = fs::remove_file(wrapper_path);
         
         Ok(Self {
             data: data_in,

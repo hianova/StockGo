@@ -1,4 +1,4 @@
-package hianova.stockgo;
+package hianova.StockGo;
 
 import java.net.HttpURLConnection;
 import java.net.URL;

@@ -1,4 +1,4 @@
-package hianova.stockgo;
+package hianova.StockGo;
 
 import java.io.StringReader;
 import java.nio.file.Files;

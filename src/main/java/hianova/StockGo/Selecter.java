@@ -1,4 +1,4 @@
-package hianova.stockgo;
+package hianova.StockGo;
 
 import java.io.FileWriter;
 import java.io.IOException;

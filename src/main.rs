@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args: Vec<String> = std::env::args().collect();
     if !args.contains(&"--json".to_string()) {
-        println!("Initializing Stockgo Rust...");
+        println!("Initializing StockGo Rust...");
     }
     
     // Create folders if they don't exist
@@ -91,22 +91,45 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Starting backtest for {}...", query);
         io::stdout().flush()?; // Ensure real-time WebSocket push
         
-        let cmd_in = vec![format!("select {}", query)];
-        let selecter = Selecter::new(cmd_in, &config);
-        let data = match selecter.select(&config) {
-            Ok(d) => d,
-            Err(_) => Vec::new(),
+        let data = if query.ends_with(".csv") {
+            let mut csv_data = vec![Vec::new()]; // Only extract Close price into column 0
+            if let Ok(content) = std::fs::read_to_string(query) {
+                for line in content.lines().skip(1) {
+                    let delimiter = if line.contains(';') { ';' } else { ',' };
+                    let parts: Vec<&str> = line.split(delimiter).collect();
+                    if parts.len() >= 5 {
+                        csv_data[0].push(parts[4].to_string());
+                    }
+                }
+            }
+            csv_data
+        } else {
+            let cmd_in = vec![format!("select {}", query)];
+            let selecter = Selecter::new(cmd_in, &config);
+            match selecter.select(&config) {
+                Ok(d) => d,
+                Err(_) => Vec::new(),
+            }
         };
         
-        if data.is_empty() || data.len() < 2 {
+        if data.is_empty() || data[0].len() < 2 {
             println!("Error: No data available for backtest.");
             return Ok(());
         }
         
-        println!("Running simulation algorithm on {} data points...", data.len() - 1);
+        println!("Running simulation algorithm on {} data points...", data[0].len());
         io::stdout().flush()?;
         
-        let tester = backtest::BackTest::new(data.clone(), "default")?;
+        // We prompt for strategy name. If empty, default to "default".
+        println!("Enter strategy name (e.g. 'default' or 'fft_chaos'):");
+        print!("> ");
+        io::stdout().flush()?;
+        let mut strat_line = String::new();
+        io::stdin().read_line(&mut strat_line)?;
+        let strategy = strat_line.trim();
+        let strategy = if strategy.is_empty() { "default" } else { strategy };
+
+        let tester = backtest::BackTest::new(data.clone(), strategy)?;
         
         println!("Backtest complete.");
         println!("Win Rate: {}", tester.get_win_rate());

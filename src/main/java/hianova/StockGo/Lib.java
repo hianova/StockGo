@@ -1,4 +1,4 @@
-package hianova.stockgo;
+package hianova.StockGo;
 
 import java.nio.file.Paths;
 import java.util.regex.Pattern;

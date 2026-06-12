@@ -10,9 +10,9 @@ def send_resp(s, *args):
     print(s.recv(1024).decode())
 
 config = {
-    "/": "file://../stockgo/public/index.html",
-    "/style.css": "file://../stockgo/public/style.css",
-    "/api/search": "cmd:///Users/kuangtalin/.bun/bin/bun run ../stockgo/cgi/search.ts"
+    "/": "file://../StockGo/public/index.html",
+    "/style.css": "file://../StockGo/public/style.css",
+    "/api/search": "cmd:///Users/kuangtalin/.bun/bin/bun run ../StockGo/cgi/search.ts"
 }
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -89,7 +89,7 @@ async function main() {
 
     // 2. Cache Miss: We execute the heavy task using stockgo CLI
     const stockgoDir = Bun.fileURLToPath(new URL("../", import.meta.url));
-    const stockgoBin = `${stockgoDir}/target/debug/stockgo`;
+    const stockgoBin = `${stockgoDir}/target/debug/StockGo`;
     const exportCsvPath = `${stockgoDir}/downloads/export.csv`;
     const input = `-S\nselect ${query}\nexport ${exportCsvPath}\nexit\nexit\n`;
     

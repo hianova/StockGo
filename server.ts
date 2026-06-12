@@ -85,7 +85,7 @@ serve({
       try {
         console.log(`Executing search for: ${query}`);
         const input = `-S select ${query}\n-S export downloads/export.csv\nexit\n`;
-        await $`echo ${input} | ./target/debug/stockgo`.quiet();
+        await $`echo ${input} | ./target/debug/StockGo`.quiet();
 
         const csvPath = "downloads/export.csv";
         if (!existsSync(csvPath)) {

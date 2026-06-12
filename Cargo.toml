@@ -1,5 +1,5 @@
 [package]
-name = "stockgo"
+name = "StockGo"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,6 +7,8 @@ edition = "2021"
 cdDB = { path = "../cdDB" }
 io_oi_core = { path = "../io_oi/core" }
 io_oi_engine = { path = "../io_oi/engine" }
+model_go = { path = "../modelgo" }
+
 
 ureq = { version = "2.9", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
