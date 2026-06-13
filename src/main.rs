@@ -18,7 +18,7 @@ use trust::TrustLayer;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Auto-chdir to project root if running from target/debug or target/release
-    // This prevents stray files (like downloads/, strategy/, user_data.json) from being generated in other directories (e.g. ServerGo)
+    // This prevents stray files (like downloads/, strategy/, user_data.json) from being generated in other directories
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(parent) = exe_path.parent().and_then(|p| p.parent()).and_then(|p| p.parent()) {
             if parent.join("Cargo.toml").exists() {
@@ -50,7 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         manager.update();
     }
     
-    // CLI Argument Intercepts for ServerGo integration
+    // CLI Argument Intercepts for external interface integration
     if args.contains(&"search".to_string()) && args.contains(&"--json".to_string()) {
         let mut line = String::new();
         io::stdin().read_line(&mut line)?;
@@ -89,7 +89,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let query = line.trim().trim_start_matches("q=");
         
         println!("Starting backtest for {}...", query);
-        io::stdout().flush()?; // Ensure real-time WebSocket push
+        io::stdout().flush()?; // Ensure output is flushed
         
         let data = if query.ends_with(".csv") {
             let mut csv_data = vec![Vec::new()]; // Only extract Close price into column 0

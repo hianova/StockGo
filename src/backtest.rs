@@ -2,7 +2,38 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 use serde::Serialize;
-use serde_json::Value;
+
+#[derive(Debug, Clone, Serialize)]
+pub struct TelemetryData {
+    pub step: usize,
+    pub price: f64,
+    pub expect_value: f64,
+    pub signal_type: u8, // 0: Hold/None, 1: Entry/Buy, 2: Exit/Sell
+}
+
+pub trait TelemetryProvider {
+    fn record_telemetry(&self, strategy_name: &str, data: &[TelemetryData]) -> Result<(), Box<dyn std::error::Error>>;
+}
+
+pub struct FileTelemetryProvider;
+
+impl TelemetryProvider for FileTelemetryProvider {
+    fn record_telemetry(&self, strategy_name: &str, data: &[TelemetryData]) -> Result<(), Box<dyn std::error::Error>> {
+        let telemetry_path = "downloads/backtest_telemetry.json";
+        println!("Saving telemetry to {}...", telemetry_path);
+        
+        let report = serde_json::json!({
+            "strategy": strategy_name,
+            "timestamp": chrono::Local::now().to_rfc3339(),
+            "telemetry": data
+        });
+        
+        let file = fs::File::create(telemetry_path)?;
+        serde_json::to_writer_pretty(file, &report)?;
+        println!("Telemetry saved successfully.");
+        Ok(())
+    }
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct BackTest {
@@ -102,14 +133,20 @@ try {
             }
         }
         
-        Ok(Self {
+        let tester = Self {
             data: data_in,
             mark,
             odd_p,
             odd_n,
             point_p,
             point_n,
-        })
+        };
+        
+        let telemetry = tester.generate_telemetry();
+        let provider = FileTelemetryProvider;
+        let _ = provider.record_telemetry(name_in, &telemetry);
+        
+        Ok(tester)
     }
 
     pub fn get_win_rate(&self) -> String {
@@ -130,4 +167,72 @@ try {
             "0.00".to_string()
         }
     }
+
+    pub fn generate_telemetry(&self) -> Vec<TelemetryData> {
+        let mut telemetry = Vec::new();
+        if self.data.is_empty() || self.data[0].is_empty() {
+            return telemetry;
+        }
+        
+        let price_col = &self.data[0];
+        let n = price_col.len();
+        
+        for t in 0..n {
+            let price: f64 = price_col[t].parse().unwrap_or(0.0);
+            
+            let mut signal_type: u8 = 0;
+            if let Some(pos) = self.mark.iter().position(|&idx| idx == t) {
+                if pos % 2 == 0 {
+                    signal_type = 1; // Entry (Buy)
+                } else {
+                    signal_type = 2; // Exit (Sell)
+                }
+            }
+            
+            let mut odd_p = 0.0;
+            let mut odd_n = 0.0;
+            let mut point_p = 0.0;
+            let mut point_n = 0.0;
+            
+            let mut i = 0;
+            while i + 1 < self.mark.len() {
+                let start_idx = self.mark[i];
+                let end_idx = self.mark[i + 1];
+                
+                if end_idx <= t {
+                    if start_idx < n && end_idx < n {
+                        let start_val: f64 = price_col[start_idx].parse().unwrap_or(0.0);
+                        let end_val: f64 = price_col[end_idx].parse().unwrap_or(0.0);
+                        let sum = end_val - start_val;
+                        
+                        if sum > 0.0 {
+                            odd_p += 1.0;
+                            point_p += sum;
+                        } else {
+                            odd_n += 1.0;
+                            point_n += sum;
+                        }
+                    }
+                }
+                i += 2;
+            }
+            
+            let total = odd_p + odd_n;
+            let expect_value = if total > 0.0 {
+                (point_p * odd_p / total) + (point_n * odd_n / total)
+            } else {
+                0.0
+            };
+            
+            telemetry.push(TelemetryData {
+                step: t,
+                price,
+                expect_value,
+                signal_type,
+            });
+        }
+        telemetry
+    }
 }
+
+
